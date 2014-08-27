@@ -19,7 +19,7 @@
 #
 -->
 
-# Release Process for ''Plugman and CLI and Cordova-lib''
+# Release Process for ''Plugman, CLI, Cordova-lib, and Cordova-js''
 
 Before cutting any releases, read the Apache's [Releases Policy](http://www.apache.org/dev/release)
 
@@ -61,15 +61,18 @@ E.g.:
 Ensure you're up-to-date:
 
     coho repo-update -r tools
+    (cd cordova-js && npm install)
     (cd cordova-lib/cordova-lib && npm install)
     (cd cordova-plugman && npm install)
     (cd cordova-cli && npm install)
+    
 
 Ensure license headers are present everywhere:
 
     coho audit-license-headers -r cli | less
     coho audit-license-headers -r plugman | less
     coho audit-license-headers -r lib | less
+    coho audit-license-headers -r js | less
 
 Ensure that mobilespec creates okay via CLI:
 
@@ -90,6 +93,7 @@ Ensure unit tests pass:
     (cd cordova-plugman; npm test)
     (cd cordova-cli; npm test)
     (cd cordova-lib/cordova-lib; npm test)
+    (cd cordova-js; grunt test --platformVersion=3.6.0)
 
 Add a comment to the JIRA issue stating what you tested, and what the results were.
 
@@ -97,7 +101,7 @@ Add a comment to the JIRA issue stating what you tested, and what the results we
 
 Increase the version within package.json using SemVer, and remove the ''-dev'' suffix
 
-    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; if [[ $v = *-dev ]]; then v2="${v%-dev}"; echo "$l: Setting version to $v2"; sed -i '' -E 's/version":.*/version": "'$v2'",/' package.json; fi) ; done
+    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli cordova-js; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; if [[ $v = *-dev ]]; then v2="${v%-dev}"; echo "$l: Setting version to $v2"; sed -i '' -E 's/version":.*/version": "'$v2'",/' package.json; fi) ; done
 
 If the changes merit it, manually bump the major / minor version instead of the micro. List the changes via:
 
@@ -108,53 +112,62 @@ If the changes merit it, manually bump the major / minor version instead of the 
 
 
     ( cd cordova-cli; git log --pretty=format:'* %s' --topo-order --no-merges $(git describe --tags --abbrev=0)..master | grep -v "Incremented plugin version" )
-
+    
+    
+    ( cd cordova-js; git log --pretty=format:'* %s' --topo-order --no-merges $(git describe --tags --abbrev=0)..master | grep -v "Incremented plugin version" )
 
 Update each repo's RELEASENOTES.md file with changes
 
     # Add new heading to release notes with version and date
     DATE=$(date "+%h %d, %Y")
-    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; echo -e "\n### $v ($DATE)" >> RELEASENOTES.md; git log --pretty=format:'* %s' --topo-order --no-merges $(git describe --tags --abbrev=0)..master | grep -v "Incremented plugin version" >> RELEASENOTES.md); done
+    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli cordova-js; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; echo -e "\n### $v ($DATE)" >> RELEASENOTES.md; git log --pretty=format:'* %s' --topo-order --no-merges $(git describe --tags --abbrev=0)..master | grep -v "Incremented plugin version" >> RELEASENOTES.md); done
     # Then curate:
-    vim cordova-lib/cordova-lib/RELEASENOTES.md cordova-cli/RELEASENOTES.md cordova-plugman/RELEASENOTES.md
+    vim cordova-lib/cordova-lib/RELEASENOTES.md cordova-cli/RELEASENOTES.md cordova-plugman/RELEASENOTES.md cordova-js/RELEASENOTES.md
 
 Update the version of cordova-lib that cli and plugman depend on:
 
     v="$(grep '"version"' cordova-lib/cordova-lib/package.json | cut -d'"' -f4)"
     sed -i '' -E 's/"cordova-lib":.*/"cordova-lib"*: "'$v'",/' cordova-cli/package.json
     sed -i '' -E 's/"cordova.lib":.*/"cordova-lib": "'$v'",/' cordova-plugman/package.json
+    
+Update the version of cordova-js that cordova-lib depends on:
+    
+    v="$(grep '"version"' cordova-js/package.json | cut -d'"' -f4)"
+    sed -i '' -E 's/"cordova-js":.*/"cordova-js"*: "'$v'",/' cordova-lib/cordova-lib/package.json
 
 Create npm-shrinkwrap.json in cli and plugman:
 
+    (cd cordova-js; npm shrinkwrap;)
     (cd cordova-lib/cordova-lib; npm shrinkwrap;)
     (cd cordova-cli; npm shrinkwrap;)
     (cd cordova-plugman; npm shrinkwrap;)
 
-Commit these three changes together into one commit
+Commit these four changes together into one commit
 
-    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; git commit -am "$JIRA Updated version and RELEASENOTES.md for release $v" ); done
+    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli cordova-js; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; git commit -am "$JIRA Updated version and RELEASENOTES.md for release $v" ); done
 
 ## Tag
 
     # Review commits:
-    for l in cordova-plugman cordova-cli cordova-lib; do ( cd $l; git log -p origin/master..master ); done
+    for l in cordova-plugman cordova-cli cordova-lib cordova-js; do ( cd $l; git log -p origin/master..master ); done
     # Tag
-    for l in cordova-plugman cordova-cli cordova-lib/cordova-lib; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; git tag $v ); done
+    for l in cordova-plugman cordova-cli cordova-lib/cordova-lib cordova-js; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; git tag $v ); done
 
 ## Re-introduce -dev suffix to versions and remove shrinkwrap
 
     (cd cordova-lib/cordova-lib; git rm npm-shrinkwrap.json;)
     (cd cordova-cli; git rm npm-shrinkwrap.json;)
     (cd cordova-plugman; git rm npm-shrinkwrap.json;)
+    (cd cordova-js; git rm npm-shrinkwrap.json;)
 
-    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; if [[ $v != *-dev ]]; then v2="$(echo $v|awk -F"." '{$NF+=1}{print $0RT}' OFS="." ORS="")-dev"; echo "$l: Setting version to $v2"; sed -i '' -E 's/version":.*/version": "'$v2'",/' package.json; fi); done
-    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli; do (cd $l; git commit -am "$JIRA Incremented package version to -dev"; git show ); done
+    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli cordova-js; do ( cd $l; v="$(grep '"version"' package.json | cut -d'"' -f4)"; if [[ $v != *-dev ]]; then v2="$(echo $v|awk -F"." '{$NF+=1}{print $0RT}' OFS="." ORS="")-dev"; echo "$l: Setting version to $v2"; sed -i '' -E 's/version":.*/version": "'$v2'",/' package.json; fi); done
+    for l in cordova-lib/cordova-lib cordova-plugman cordova-cli cordova-js; do (cd $l; git commit -am "$JIRA Incremented package version to -dev"; git show ); done
 
 
 ## Push
 
     # Push
-    for l in cordova-lib cordova-plugman cordova-cli; do ( cd $l; git push && git push --tags ); done
+    for l in cordova-lib cordova-plugman cordova-cli cordova-js; do ( cd $l; git push && git push --tags ); done
 
 If the push fails due to not being fully up-to-date, either:
 1. Pull in new changes via `git pull --rebase`, and include them in the release notes / re-tag
@@ -167,7 +180,7 @@ Ensure you have the svn repos checked out:
 
 Create archives from your tags:
 
-    coho create-archive -r plugman -r cli -r lib --dest cordova-dist-dev/$JIRA
+    coho create-archive -r plugman -r cli -r lib -r js --dest cordova-dist-dev/$JIRA
 
 Sanity Check:
 
@@ -202,7 +215,7 @@ __Body:__
     https://dist.apache.org/repos/dist/dev/cordova/CB-XXXX/
 
     The packages were published from their corresponding git tags:
-    PASTE OUTPUT OF: coho print-tags -r lib -r cli -r plugman
+    PASTE OUTPUT OF: coho print-tags -r lib -r cli -r plugman -r js
 
     Upon a successful vote I will upload the archives to dist/, publish them to NPM, and post the corresponding blog post.
 
@@ -263,6 +276,7 @@ Find your release here: https://dist.apache.org/repos/dist/release/cordova/tools
     npm publish cordova-dist/tools/cordova-lib-*.tgz
     npm publish cordova-dist/tools/cordova-cli-*.tgz
     npm publish cordova-dist/tools/cordova-plugman-*.tgz
+    npm publish cordova-dist/tools/cordova-js-*.tgz
 
 
 If npm publish fails for you, run `npm owner ls PACKAGENAME` to see if you are an owner. If you aren't, ask one of the owners to add you.
