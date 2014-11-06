@@ -16,13 +16,27 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 */
+
 var repoutil = require('./repoutil');
 var executil = require('./executil');
+var flagutil = require('./flagutil');
 
-module.exports = function *(repos) {
+function *retrieveShas(repos) {
     var shas = {};
     yield repoutil.forEachRepo(repos, function*(repo) {
         shas[repo.id] = yield executil.execHelper(executil.ARGS('git rev-parse HEAD'), true, true);
     });
     return shas;
 }
+
+exports.retrieveShas = retrieveShas;
+
+function *retrieveTags(repos) {
+    var tags = {};
+    yield repoutil.forEachRepo(repos, function*(repo) {
+       tags[repo.id] = yield executil.execHelper(executil.ARGS('npm view ' + repo.id + ' dist-tags.latest'), true, true); 
+    });
+    return tags;
+}
+
+exports.retrieveTags = retrieveTags;

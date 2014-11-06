@@ -22,7 +22,7 @@ var optimist = require('optimist');
 var flagutil = require('./flagutil');
 var repoutil = require('./repoutil');
 var repoupdate = require('./repo-update');
-var retrieveSha = require('./retrieve-sha');
+var retrieveplatforms = require('./retrieve-platforms');
 var npmpublish = require('./npm-publish');
 var versionutil = require('./versionutil');
 var gitutil = require('./gitutil');
@@ -62,8 +62,8 @@ module.exports = function*(argv) {
     })
 
     //get SHAS from platforms
-    var SHAJSON = yield retrieveSha(repos);
-
+    var SHAJSON = yield retrieveplatforms.retrieveShas(repos);
+    
     //save SHAJSON in cordova-cli repo
     yield repoutil.forEachRepo([cli], function*() {
         //need to get the path to cordova-cli using executil
