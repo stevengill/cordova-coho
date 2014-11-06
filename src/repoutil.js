@@ -350,11 +350,6 @@ var toolRepos = [
         id: 'js',
         repoName: 'cordova-js',
         jiraComponentName: 'CordovaJS'
-    }, {
-        title: 'Cordova Coho',
-        id: 'coho',
-        repoName: 'cordova-coho',
-        jiraComponentName: 'Coho'
     }
 ];
 
