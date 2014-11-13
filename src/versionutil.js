@@ -19,6 +19,7 @@ under the License.
 var repoutil = require('./repoutil');
 var flagutil = require('./flagutil');
 var path = require('path');
+var fs = require('fs');
 
 function removeDev(version) {
     var newVersion = version.replace('-dev', '');
@@ -31,10 +32,9 @@ exports.removeDev = removeDev;
 //and the new version as value
 //ex {android:4.0.0}
 function *updatePlatformsConfig(newValues) {
-    
-    var platformsConfig = path.join(repoutil.getRepoDir('cordova-lib'), 
+    var cordovaLib = repoutil.getRepoById('lib');
+    var platformsConfig = path.join(repoutil.getRepoDir(cordovaLib), 
         'src/cordova/platformsConfig.json');
-    console.log(platformsConfig);
     var platformsJS = require(platformsConfig);
 
     var repos = flagutil.computeReposFromFlag('active-platform');

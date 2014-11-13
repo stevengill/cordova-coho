@@ -34,7 +34,11 @@ exports.retrieveShas = retrieveShas;
 function *retrieveTags(repos) {
     var tags = {};
     yield repoutil.forEachRepo(repos, function*(repo) {
-       tags[repo.id] = yield executil.execHelper(executil.ARGS('npm view ' + repo.id + ' dist-tags.latest'), true, true); 
+        if(repo.id === 'blackberry') {
+            tags[repo.id] = yield executil.execHelper(executil.ARGS('npm view ' + repo.repoName + '10 dist-tags.latest'), true, true); 
+        } else {
+            tags[repo.id] = yield executil.execHelper(executil.ARGS('npm view ' + repo.repoName + ' dist-tags.latest'), true, true); 
+        }
     });
     return tags;
 }
