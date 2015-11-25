@@ -137,16 +137,20 @@ module.exports = function() {
             desc: 'Launches github PR UI for the specified topic branch',
             entryPoint: lazyRequire('./create-pr'),
             noChdir : true
-        }, 
+        },
         {
             name: 'last-week',
             desc: 'Prints out git logs of things that happened last week.',
             entryPoint: lazyRequire('./last-week')
         }, {
+            name: 'copy',
+            desc: 'A version of `git shortlog -s` aggregated across multiple repos.',
+            entryPoint: lazyRequire('./copy')
+        }, {
             name: 'shortlog',
             desc: 'A version of `git shortlog -s` aggregated across multiple repos.',
             entryPoint: lazyRequire('./shortlog')
-        }, {
+        },{
             name: 'for-each',
             desc: 'Runs a shell command in each repo.',
             entryPoint: lazyRequire('./for-each')
